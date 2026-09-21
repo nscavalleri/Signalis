@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signalis | Autogestión</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --celeste: #29B6E8;
+    --celeste-deep: #0E7DAF;
+    --celeste-tint: #E7F7FD;
+    --fucsia: #E6017C;
+    --fucsia-deep: #B10161;
+    --fucsia-tint: #FDEAF4;
+    --ink: #0F2438;
+    --ink-soft: #5C7080;
+    --bg: #F4F7F9;
+    --card: #FFFFFF;
+    --line: #E4EAEE;
+    --radius: 18px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family:'Inter', sans-serif;
+    color:var(--ink);
+    background:
+      radial-gradient(circle at 15% 0%, rgba(41,182,232,0.16), transparent 45%),
+      radial-gradient(circle at 85% 100%, rgba(230,1,124,0.12), transparent 45%),
+      var(--bg);
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:36px 16px;
+  }
+  h1,h2,h3,.brand{ font-family:'Space Grotesk', sans-serif; }
+
+  .phone{
+    width:420px;
+    max-width:100%;
+    background:var(--card);
+    border-radius:32px;
+    box-shadow:0 30px 60px -20px rgba(15,36,56,0.25), 0 0 0 1px var(--line);
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    min-height:760px;
+  }
+
+  /* Top bar */
+  .topbar{
+    padding:22px 22px 18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:linear-gradient(135deg, var(--celeste) 0%, var(--celeste-deep) 100%);
+    color:#fff;
+  }
+  .brand{ display:flex; align-items:center; gap:10px; font-size:19px; font-weight:700; letter-spacing:0.2px; }
+  .brand .dot{
+    width:11px; height:11px; border-radius:50%;
+    background:var(--fucsia);
+    box-shadow:0 0 0 4px rgba(255,255,255,0.25);
+  }
+  .greeting{ font-size:12.5px; opacity:0.9; text-align:right; line-height:1.3; }
+  .greeting strong{ display:block; font-size:14px; font-weight:600; }
+
+  /* Content */
+  .content{ padding:20px 20px 12px; flex:1; overflow-y:auto; }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:18px;
+    margin-bottom:14px;
+  }
+  .eyebrow{ font-size:12px; color:var(--ink-soft); margin:0 0 4px; }
+  .plan-name{ font-size:18px; font-weight:600; margin:0 0 14px; }
+
+  .usage-row{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; }
+  .usage-value{ font-size:15px; font-weight:600; }
+  .usage-pct{ font-size:12.5px; color:var(--ink-soft); }
+
+  .bar-track{ height:10px; border-radius:999px; background:var(--celeste-tint); overflow:hidden; }
+  .bar-fill{
+    height:100%; border-radius:999px;
+    background:linear-gradient(90deg, var(--celeste) 0%, var(--fucsia) 130%);
+    width:65%;
+    transition:width .5s ease;
+  }
+
+  .row-between{ display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .row-title{ font-size:15px; font-weight:600; margin:0 0 2px; }
+  .row-sub{ font-size:12.5px; color:var(--ink-soft); margin:0; }
+
+  /* Toggle */
+  .switch{ position:relative; width:48px; height:28px; flex:none; }
+  .switch input{ opacity:0; width:0; height:0; }
+  .slider{
+    position:absolute; inset:0; cursor:pointer;
+    background:#CBD5DD; border-radius:999px; transition:.25s;
+  }
+  .slider:before{
+    content:""; position:absolute; height:22px; width:22px; left:3px; top:3px;
+    background:white; border-radius:50%; transition:.25s;
+    box-shadow:0 1px 3px rgba(0,0,0,0.25);
+  }
+  .switch input:checked + .slider{ background:var(--fucsia); }
+  .switch input:checked + .slider:before{ transform:translateX(20px); }
+  .status-tag{
+    display:inline-block; margin-top:8px; font-size:12px; font-weight:600;
+    padding:3px 10px; border-radius:999px;
+    background:var(--celeste-tint); color:var(--celeste-deep);
+  }
+  .status-tag.on{ background:var(--fucsia-tint); color:var(--fucsia-deep); }
+
+  .btn{
+    width:100%; border:none; border-radius:12px; padding:13px 16px;
+    font-family:'Inter', sans-serif; font-weight:600; font-size:14.5px;
+    cursor:pointer; transition:transform .12s ease, opacity .12s ease;
+  }
+  .btn:active{ transform:scale(0.98); }
+  .btn-primary{ background:var(--celeste); color:#fff; }
+  .btn-primary:hover{ background:var(--celeste-deep); }
+  .btn-ghost{
+    background:transparent; color:var(--ink-soft); border:1px dashed var(--ink-soft);
+    font-size:13px; padding:11px 14px;
+  }
+
+  .notifications{ display:flex; flex-direction:column; gap:10px; }
+  .notif{
+    display:flex; gap:10px; align-items:flex-start;
+    padding:10px 12px; border-radius:12px; background:var(--celeste-tint);
+    font-size:13px; line-height:1.4;
+  }
+  .notif.alert{ background:var(--fucsia-tint); color:var(--fucsia-deep); font-weight:600; }
+  .notif .dot2{ width:6px; height:6px; border-radius:50%; background:var(--celeste-deep); margin-top:6px; flex:none; }
+  .notif.alert .dot2{ background:var(--fucsia); }
+
+  .dev-zone{
+    border:1px dashed #C9CFD6; border-radius:14px; padding:12px; margin-top:4px;
+    background:#FAFBFC;
+  }
+  .dev-zone .eyebrow{ margin-bottom:8px; }
+
+  /* Tabs */
+  .tabbar{
+    display:flex; border-top:1px solid var(--line); background:#fff;
+  }
+  .tab{
+    flex:1; text-align:center; padding:12px 4px 14px; font-size:12px; color:var(--ink-soft);
+    cursor:pointer; font-weight:600; border-top:2px solid transparent;
+  }
+  .tab.active{ color:var(--celeste-deep); border-top-color:var(--celeste); }
+
+  /* Modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(15,36,56,0.45);
+    display:none; align-items:center; justify-content:center; padding:20px; z-index:10;
+  }
+  .overlay.show{ display:flex; }
+  .modal{
+    background:#fff; border-radius:20px; width:100%; max-width:340px; padding:22px;
+  }
+  .modal h3{ margin:0 0 6px; font-size:17px; }
+  .modal p{ margin:0 0 16px; font-size:13px; color:var(--ink-soft); }
+  select{
+    width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--line);
+    font-family:'Inter', sans-serif; font-size:14px; margin-bottom:14px; background:#fff;
+  }
+  .modal-actions{ display:flex; gap:10px; }
+  .btn-secondary{ background:var(--fucsia-tint); color:var(--fucsia-deep); }
+  .btn-secondary:hover{ background:#FBD6E9; }
+
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+
+  <div class="phone">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span>Signalis</div>
+      <div class="greeting">Hola<strong>Ana Torres</strong></div>
+    </div>
+
+    <div class="content" id="tab-inicio">
+
+      <div class="card">
+        <p class="eyebrow">Plan actual</p>
+        <h2 class="plan-name">Plan Datos 10 GB</h2>
+        <div class="usage-row">
+          <span class="usage-value" id="usageValue">6.5 GB de 10 GB utilizados</span>
+          <span class="usage-pct" id="usagePct">65%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" id="dataUsageBar" style="width:65%;"></div></div>
+      </div>
+
+      <div class="card">
+        <div class="row-between">
+          <div>
+            <p class="row-title">Roaming internacional</p>
+            <p class="row-sub">Activalo antes de viajar fuera del país</p>
+          </div>
+          <label class="switch">
+            <input type="checkbox" id="roamingToggle" onchange="toggleRoaming()">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <span class="status-tag" id="roamingStatus">Roaming desactivado</span>
+      </div>
+
+      <div class="card">
+        <p class="row-title" style="margin-bottom:10px;">Recargar datos</p>
+        <button class="btn btn-primary" onclick="openTopup()">Comprar paquete adicional</button>
+        <div id="topupConfirmation" class="notif hidden" style="margin-top:12px;">
+          <span class="dot2"></span><span id="topupConfirmationText"></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <p class="row-title" style="margin-bottom:10px;">Notificaciones</p>
+        <div class="notifications" id="notificationsList">
+          <div class="notif"><span class="dot2"></span><span>Tu factura de septiembre ya está disponible para descargar.</span></div>
+          <div class="notif"><span class="dot2"></span><span>Bienvenida a Signalis. Gestioná tu línea desde acá cuando quieras.</span></div>
+        </div>
+      </div>
+
+      <div class="dev-zone">
+        <p class="eyebrow">Herramienta de demo (no visible para clientes reales)</p>
+        <button class="btn btn-ghost" id="simulateHighUsage" onclick="simulateHighUsage()">Simular consumo alto</button>
+      </div>
+
+    </div>
+
+    <div class="content hidden" id="tab-facturacion">
+      <div class="card"><p class="row-title">Facturación</p><p class="row-sub">Sección en construcción para este caso de estudio.</p></div>
+    </div>
+
+    <div class="content hidden" id="tab-soporte">
+      <div class="card"><p class="row-title">Soporte</p><p class="row-sub">Sección en construcción para este caso de estudio.</p></div>
+    </div>
+
+    <div class="tabbar">
+      <div class="tab active" data-tab="inicio" onclick="switchTab('inicio')">Inicio</div>
+      <div class="tab" data-tab="facturacion" onclick="switchTab('facturacion')">Facturación</div>
+      <div class="tab" data-tab="soporte" onclick="switchTab('soporte')">Soporte</div>
+    </div>
+  </div>
+
+  <div class="overlay" id="topupOverlay">
+    <div class="modal">
+      <h3>Comprar paquete adicional</h3>
+      <p>Elegí cuántos datos extra querés sumar a tu plan actual.</p>
+      <select id="topupSelect">
+        <option value="1">1 GB adicional</option>
+        <option value="3">3 GB adicionales</option>
+        <option value="5">5 GB adicionales</option>
+      </select>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" style="flex:1;" onclick="closeTopup()">Cancelar</button>
+        <button class="btn btn-primary" style="flex:1;" id="confirmTopup" onclick="confirmTopup()">Confirmar compra</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  let planTotal = 10;
+  let used = 6.5;
+
+  function renderUsage(){
+    const pct = Math.min(100, Math.round((used / planTotal) * 100));
+    document.getElementById('usageValue').textContent = used.toFixed(1) + ' GB de ' + planTotal.toFixed(0) + ' GB utilizados';
+    document.getElementById('usagePct').textContent = pct + '%';
+    document.getElementById('dataUsageBar').style.width = pct + '%';
+  }
+
+  function toggleRoaming(){
+    const on = document.getElementById('roamingToggle').checked;
+    const tag = document.getElementById('roamingStatus');
+    tag.textContent = on ? 'Roaming activado' : 'Roaming desactivado';
+    tag.classList.toggle('on', on);
+  }
+
+  function openTopup(){ document.getElementById('topupOverlay').classList.add('show'); }
+  function closeTopup(){ document.getElementById('topupOverlay').classList.remove('show'); }
+
+  function confirmTopup(){
+    const gb = parseInt(document.getElementById('topupSelect').value, 10);
+    planTotal += gb;
+    renderUsage();
+    const box = document.getElementById('topupConfirmation');
+    document.getElementById('topupConfirmationText').textContent =
+      'Recarga exitosa: se sumaron ' + gb + ' GB a tu plan.';
+    box.classList.remove('hidden');
+    closeTopup();
+  }
+
+  function simulateHighUsage(){
+    used = planTotal * 0.9;
+    renderUsage();
+    const list = document.getElementById('notificationsList');
+    const div = document.createElement('div');
+    div.className = 'notif alert';
+    div.id = 'usageAlert';
+    div.innerHTML = '<span class="dot2"></span><span>Estás por alcanzar tu límite de datos: llevás el 90% de tu plan consumido.</span>';
+    list.prepend(div);
+  }
+
+  function switchTab(name){
+    ['inicio','facturacion','soporte'].forEach(t=>{
+      document.getElementById('tab-'+t).classList.toggle('hidden', t!==name);
+    });
+    document.querySelectorAll('.tab').forEach(el=>{
+      el.classList.toggle('active', el.dataset.tab===name);
+    });
+  }
+
+  renderUsage();
+</script>
+
+</body>
+</html>
