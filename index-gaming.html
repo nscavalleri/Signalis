@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeoQuest Arcade</title>
+<style>
+  :root{
+    --pink:#FF6061; --cyan:#04C6DA; --yellow:#FFD23F;
+    --bg:#14161c; --panel:#1e2129; --panel2:#262a34; --line:#343946;
+    --text:#f4f5f7; --muted:#9aa1b0; --ok:#3ddc97;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:"Segoe UI",Roboto,Helvetica,Arial,sans-serif;min-height:100vh}
+  button{font:inherit;cursor:pointer}
+  input,select{font:inherit;accent-color:var(--cyan)}
+  .hidden{display:none !important}
+
+  /* ---------- Login ---------- */
+  #login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;
+    background:radial-gradient(circle at 20% 20%,rgba(255,96,97,.25),transparent 40%),radial-gradient(circle at 80% 80%,rgba(4,198,218,.25),transparent 40%),var(--bg)}
+  .login-card{width:100%;max-width:380px;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:32px}
+  .logo{font-weight:800;font-size:28px;letter-spacing:.5px}
+  .logo span{color:var(--pink)} .logo b{color:var(--cyan)}
+  .tagline{color:var(--muted);margin:4px 0 24px}
+  label{display:block;font-size:14px;color:var(--muted);margin:14px 0 6px}
+  .field{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--text)}
+  .field:focus{outline:2px solid var(--cyan);border-color:transparent}
+  .btn{border:none;border-radius:10px;padding:11px 18px;font-weight:700;color:#fff;background:var(--pink)}
+  .btn:hover{filter:brightness(1.08)}
+  .btn.secondary{background:var(--panel2);border:1px solid var(--line)}
+  .btn.cyan{background:var(--cyan);color:#06222a}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
+  .btn.block{width:100%;margin-top:22px}
+  .error{color:var(--pink);font-size:14px;margin-top:12px;min-height:18px}
+  .hint{color:var(--muted);font-size:12px;margin-top:4px}
+  .demo-creds{margin-top:18px;font-size:12px;color:var(--muted);border-top:1px dashed var(--line);padding-top:12px}
+
+  /* ---------- App shell ---------- */
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:14px 24px;background:var(--panel);border-bottom:1px solid var(--line)}
+  header .logo{font-size:20px;margin-right:auto}
+  .wallet{display:flex;gap:10px;align-items:center}
+  .chip{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-weight:700;font-size:14px}
+  .chip.coins{color:var(--yellow)} .chip.gems{color:var(--cyan)}
+  nav{display:flex;gap:6px;flex-wrap:wrap;padding:12px 24px;border-bottom:1px solid var(--line)}
+  nav button{background:transparent;border:1px solid transparent;color:var(--muted);padding:8px 14px;border-radius:999px;font-weight:600}
+  nav button.active{color:#fff;border-color:var(--pink);background:rgba(255,96,97,.12)}
+  main{max-width:1000px;margin:0 auto;padding:24px}
+  h1{font-size:24px;margin:0 0 4px} .sub{color:var(--muted);margin:0 0 20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h2{font-size:17px;margin:0 0 12px}
+  .bar{height:12px;background:var(--panel2);border-radius:999px;overflow:hidden;margin:6px 0}
+  .bar > div{height:100%;background:linear-gradient(90deg,var(--pink),var(--cyan));transition:width .3s}
+  .bar.hp > div{background:var(--ok)} .bar.enemy > div{background:var(--pink)}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .muted{color:var(--muted)}
+  .msg{margin-top:12px;font-size:14px;min-height:18px}
+  .msg.ok{color:var(--ok)} .msg.err{color:var(--pink)}
+  ul.inv{list-style:none;padding:0;margin:0} ul.inv li{padding:6px 0;border-bottom:1px solid var(--line)}
+  footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
+
+  /* battle */
+  .arena{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  @media (max-width:640px){.arena{grid-template-columns:1fr}}
+  .fighter .avatar{font-size:48px;text-align:center}
+  .actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+  #battle-log{background:var(--panel2);border-radius:10px;padding:12px;height:150px;overflow:auto;font-size:13px;font-family:Consolas,monospace;margin-top:16px}
+  #battle-result{font-size:20px;font-weight:800;margin-top:14px;min-height:26px}
+  #battle-result.win{color:var(--yellow)}
+
+  /* store */
+  .item .emoji{font-size:40px}
+  .price{color:var(--yellow);font-weight:800}
+
+  /* leaderboard */
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600}
+  tr.me td{color:var(--cyan);font-weight:700}
+
+  /* toast */
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--cyan);padding:12px 18px;border-radius:10px;font-weight:600;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw}
+  #toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<section id="login-screen" aria-label="Login">
+  <form class="login-card" id="login-form" novalidate>
+    <div class="logo"><span>Neo</span><b>Quest</b> Arcade</div>
+    <p class="tagline">Battle, collect, climb the ranks.</p>
+    <label for="login-email">Email</label>
+    <input class="field" id="login-email" name="email" type="email" placeholder="player@neoquest.gg" autocomplete="username">
+    <label for="login-password">Password</label>
+    <input class="field" id="login-password" name="password" type="password" placeholder="••••••••" autocomplete="current-password">
+    <button class="btn block" id="login-btn" type="submit">Log in</button>
+    <div class="error" id="login-error" role="alert"></div>
+    <div class="demo-creds">Demo account: player@neoquest.gg / Quest2026!</div>
+  </form>
+</section>
+
+<!-- ================= APP ================= -->
+<div id="app" class="hidden">
+  <header>
+    <div class="logo"><span>Neo</span><b>Quest</b> Arcade</div>
+    <div class="wallet">
+      <span class="chip coins" id="hud-coins" data-testid="coins">🪙 250</span>
+      <span class="chip gems" id="hud-gems" data-testid="gems">💎 15</span>
+      <span class="chip" id="hud-nickname">StarRunner</span>
+    </div>
+    <button class="btn secondary" id="logout-btn" type="button">Log out</button>
+  </header>
+
+  <nav aria-label="Main">
+    <button type="button" data-view="lobby" class="active">Lobby</button>
+    <button type="button" data-view="battle">Battle</button>
+    <button type="button" data-view="store">Store</button>
+    <button type="button" data-view="leaderboard">Leaderboard</button>
+    <button type="button" data-view="settings">Settings</button>
+  </nav>
+
+  <main>
+    <!-- LOBBY -->
+    <section id="view-lobby" class="view">
+      <h1>Welcome back, <span id="lobby-nickname">StarRunner</span>!</h1>
+      <p class="sub">Your daily hub: rewards, progress and inventory.</p>
+      <div class="grid">
+        <div class="card">
+          <h2>Player profile</h2>
+          <div class="row"><span>Level</span><strong id="player-level">3</strong></div>
+          <div class="bar"><div id="xp-bar" style="width:60%"></div></div>
+          <div class="row muted"><span>XP</span><span id="player-xp">120 / 200</span></div>
+        </div>
+        <div class="card">
+          <h2>Daily reward</h2>
+          <p class="muted">Log in every day to claim 100 coins.</p>
+          <button class="btn cyan" id="daily-reward-btn" type="button">Claim daily reward</button>
+          <div class="msg" id="daily-msg"></div>
+        </div>
+        <div class="card">
+          <h2>Redeem a code</h2>
+          <form id="promo-form" novalidate>
+            <label for="promo-code">Promo code</label>
+            <input class="field" id="promo-code" name="promo" placeholder="e.g. WELCOME100">
+            <button class="btn" id="promo-btn" type="submit" style="margin-top:12px">Redeem</button>
+          </form>
+          <div class="msg" id="promo-msg"></div>
+        </div>
+        <div class="card">
+          <h2>Inventory</h2>
+          <ul class="inv" id="inventory-list"><li class="muted">Your inventory is empty.</li></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- BATTLE -->
+    <section id="view-battle" class="view hidden">
+      <h1>Battle: Slime King</h1>
+      <p class="sub">Defeat the boss to earn 50 coins and 30 XP. Each attack deals 25 damage.</p>
+      <div class="arena">
+        <div class="card fighter">
+          <div class="avatar">🧝</div>
+          <h2 id="battle-player-name">StarRunner</h2>
+          <div class="bar hp"><div id="player-hp-bar" style="width:100%"></div></div>
+          <div class="row muted"><span>HP</span><span id="player-hp">100 / 100</span></div>
+          <div class="row muted"><span>Potions</span><span id="potion-count">2</span></div>
+        </div>
+        <div class="card fighter">
+          <div class="avatar">🟢👑</div>
+          <h2>Slime King</h2>
+          <div class="bar enemy"><div id="enemy-hp-bar" style="width:100%"></div></div>
+          <div class="row muted"><span>HP</span><span id="enemy-hp">100 / 100</span></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" id="attack-btn" type="button">Attack</button>
+        <button class="btn cyan" id="potion-btn" type="button">Use potion (+40 HP)</button>
+        <button class="btn secondary" id="flee-btn" type="button">Flee</button>
+        <button class="btn secondary hidden" id="play-again-btn" type="button">Play again</button>
+      </div>
+      <div id="battle-result" role="status"></div>
+      <div id="battle-log" aria-label="Battle log"></div>
+    </section>
+
+    <!-- STORE -->
+    <section id="view-store" class="view hidden">
+      <h1>Item Shop</h1>
+      <p class="sub">Spend your coins on gear. Purchases are final.</p>
+      <div class="grid" id="store-grid"></div>
+      <div class="msg" id="store-msg"></div>
+    </section>
+
+    <!-- LEADERBOARD -->
+    <section id="view-leaderboard" class="view hidden">
+      <h1>Global Leaderbaord</h1>
+      <p class="sub">Top players this season, ranked by score.</p>
+      <div class="card">
+        <label for="lb-search">Search player</label>
+        <input class="field" id="lb-search" placeholder="Type a nickname">
+        <table style="margin-top:14px">
+          <thead><tr><th>Rank</th><th>Player</th><th>Level</th><th>Score</th></tr></thead>
+          <tbody id="lb-body"></tbody>
+        </table>
+        <div class="msg muted" id="lb-empty"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="view-settings" class="view hidden">
+      <h1>Settings</h1>
+      <p class="sub">Personalize your profile and game options.</p>
+      <form class="card" id="settings-form" novalidate style="max-width:520px">
+        <label for="set-nickname">Nickname</label>
+        <input class="field" id="set-nickname" name="nickname" value="StarRunner">
+        <div class="hint">3–16 characters.</div>
+
+        <label for="set-language">Language</label>
+        <select class="field" id="set-language" name="language">
+          <option>English</option><option>Español</option><option>Nederlands</option>
+        </select>
+
+        <label>Difficulty</label>
+        <div style="display:flex;gap:16px">
+          <label style="margin:0;color:var(--text)"><input type="radio" name="difficulty" value="Easy"> Easy</label>
+          <label style="margin:0;color:var(--text)"><input type="radio" name="difficulty" value="Normal" checked> Normal</label>
+          <label style="margin:0;color:var(--text)"><input type="radio" name="difficulty" value="Hard"> Hard</label>
+        </div>
+
+        <label for="set-volume">Music volume: <span id="vol-value">70</span>%</label>
+        <input id="set-volume" name="volume" type="range" min="0" max="100" value="70" style="width:100%">
+
+        <button class="btn" id="save-settings-btn" type="submit" style="margin-top:18px">Save settings</button>
+        <div class="msg" id="settings-msg"></div>
+      </form>
+    </section>
+  </main>
+  <footer>NeoQuest Arcade · <span id="build-label">Build 1.4.2</span> · Demo app for QA training — fictional game, no real payments.</footer>
+</div>
+
+<div id="toast" role="status"></div>
+
+<script>
+/* =========================================================
+   NeoQuest Arcade — demo app for the Kualitee Hootie webinar.
+   Contains intentionally seeded defects (see the case study).
+   Add ?build=1.4.3 to the URL to load the "next release",
+   which introduces a regression in battle rewards.
+   ========================================================= */
+const BUILD = new URLSearchParams(location.search).get('build') === '1.4.3' ? '1.4.3' : '1.4.2';
+const CREDS = { email: 'player@neoquest.gg', password: 'Quest2026!' };
+const PROMOS = { 'WELCOME100': 100 };
+
+const state = {
+  nickname: 'StarRunner', level: 3, xp: 120, xpMax: 200,
+  coins: 250, gems: 15, inventory: [], dailyClaimed: false, usedCodes: [],
+  battle: null
+};
+
+const $ = id => document.getElementById(id);
+function toast(t){ const el=$('toast'); el.textContent=t; el.classList.add('show'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('show'),2600); }
+function setMsg(id, text, ok){ const el=$(id); el.textContent=text; el.className='msg '+(ok?'ok':'err'); }
+
+function renderHud(){
+  $('hud-coins').textContent = '🪙 ' + state.coins;
+  $('hud-gems').textContent = '💎 ' + state.gems;
+  $('hud-nickname').textContent = state.nickname;
+  $('lobby-nickname').textContent = state.nickname;
+  $('battle-player-name').textContent = state.nickname;
+  $('player-level').textContent = state.level;
+  $('player-xp').textContent = state.xp + ' / ' + state.xpMax;
+  $('xp-bar').style.width = Math.min(100, state.xp / state.xpMax * 100) + '%';
+  const inv = $('inventory-list');
+  inv.innerHTML = state.inventory.length
+    ? state.inventory.map(i => `<li>${i.emoji} ${i.name}</li>`).join('')
+    : '<li class="muted">Your inventory is empty.</li>';
+}
+
+/* ---------- Login ---------- */
+$('login-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = $('login-email').value.trim();
+  const pass = $('login-password').value;
+  if(!email || !pass){ $('login-error').textContent = 'Please enter your email and password.'; return; }
+  if(email.toLowerCase() !== CREDS.email || pass !== CREDS.password){ $('login-error').textContent = 'Invalid email or password.'; return; }
+  $('login-error').textContent = '';
+  $('login-screen').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  showView('lobby'); renderHud(); toast('Welcome back, ' + state.nickname + '!');
+});
+$('logout-btn').addEventListener('click', () => {
+  $('app').classList.add('hidden'); $('login-screen').classList.remove('hidden');
+  $('login-password').value = '';
+});
+
+/* ---------- Navigation ---------- */
+function showView(name){
+  document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+  $('view-' + name).classList.remove('hidden');
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  if(name === 'battle' && !state.battle) resetBattle();
+}
+document.querySelectorAll('nav button').forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+
+/* ---------- Daily reward ---------- */
+$('daily-reward-btn').addEventListener('click', () => {
+  // DEFECT: the button changes its label but is never disabled and the
+  // "already claimed" flag is never checked, so the reward can be claimed again.
+  state.coins += 100; state.dailyClaimed = true;
+  $('daily-reward-btn').textContent = 'Claimed ✓';
+  setMsg('daily-msg', '+100 coins added. Come back tomorrow!', true);
+  renderHud();
+});
+
+/* ---------- Promo codes ---------- */
+$('promo-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const code = $('promo-code').value.trim().toUpperCase();
+  if(!code){ setMsg('promo-msg', 'Please enter a code.', false); return; }
+  if(!(code in PROMOS)){ setMsg('promo-msg', 'This code is not valid.', false); return; }
+  if(state.usedCodes.includes(code)){ setMsg('promo-msg', 'This code has already been redeemed.', false); return; }
+  state.usedCodes.push(code);
+  // DEFECT: message promises 100 coins but only 10 are credited.
+  state.coins += PROMOS[code] / 10;
+  setMsg('promo-msg', 'Code redeemed! +' + PROMOS[code] + ' coins added to your wallet.', true);
+  $('promo-code').value = '';
+  renderHud();
+});
+
+/* ---------- Battle ---------- */
+function resetBattle(){
+  state.battle = { playerHp:100, playerMax:100, enemyHp:100, enemyMax:100, potions:2, over:false };
+  $('battle-log').innerHTML = ''; $('battle-result').textContent = ''; $('battle-result').className = '';
+  ['attack-btn','potion-btn','flee-btn'].forEach(id => $(id).disabled = false);
+  $('play-again-btn').classList.add('hidden');
+  log('A wild Slime King appears!');
+  renderBattle();
+}
+function log(t){ const l=$('battle-log'); l.innerHTML += '› ' + t + '<br>'; l.scrollTop = l.scrollHeight; }
+function renderBattle(){
+  const b = state.battle;
+  $('player-hp').textContent = b.playerHp + ' / ' + b.playerMax;
+  $('enemy-hp').textContent = b.enemyHp + ' / ' + b.enemyMax;
+  $('player-hp-bar').style.width = Math.min(100, b.playerHp / b.playerMax * 100) + '%';
+  $('enemy-hp-bar').style.width = (b.enemyHp / b.enemyMax * 100) + '%';
+  $('potion-count').textContent = b.potions;
+  $('potion-btn').disabled = b.over || b.potions === 0;
+}
+function endBattle(won){
+  const b = state.battle; b.over = true;
+  ['attack-btn','potion-btn','flee-btn'].forEach(id => $(id).disabled = true);
+  $('play-again-btn').classList.remove('hidden');
+  if(won){
+    $('battle-result').textContent = 'Victory! +50 coins, +30 XP';
+    $('battle-result').className = 'win';
+    // REGRESSION in build 1.4.3: rewards are announced but never credited.
+    if(BUILD !== '1.4.3'){
+      state.coins += 50; state.xp += 30;
+      if(state.xp >= state.xpMax){ state.xp -= state.xpMax; state.level += 1; toast('Level up! You are now level ' + state.level); }
+    }
+    log('Slime King was defeated.');
+  } else {
+    $('battle-result').textContent = 'You fled the battle.';
+  }
+  renderHud();
+}
+$('attack-btn').addEventListener('click', () => {
+  const b = state.battle; if(b.over) return;
+  b.enemyHp = Math.max(0, b.enemyHp - 25);
+  log('You attack for 25 damage.');
+  if(b.enemyHp === 0){ renderBattle(); endBattle(true); return; }
+  b.playerHp = Math.max(0, b.playerHp - 15);
+  log('Slime King hits you for 15 damage.');
+  renderBattle();
+});
+$('potion-btn').addEventListener('click', () => {
+  const b = state.battle; if(b.over || b.potions === 0) return;
+  b.potions -= 1;
+  // DEFECT: healing is not capped at max HP (can show 125 / 100).
+  b.playerHp = b.playerHp + 40;
+  log('You drink a potion and recover 40 HP.');
+  renderBattle();
+});
+$('flee-btn').addEventListener('click', () => { if(!state.battle.over){ log('You ran away.'); endBattle(false); } });
+$('play-again-btn').addEventListener('click', resetBattle);
+
+/* ---------- Store ---------- */
+const ITEMS = [
+  { id:'potion', name:'Health Potion', emoji:'🧪', price:50,  desc:'Restores 40 HP in battle.' },
+  { id:'shield', name:'Steel Shield',  emoji:'🛡️', price:200, desc:'Blocks 10% of incoming damage.' },
+  { id:'sword',  name:'Dragon Sword',  emoji:'🗡️', price:500, desc:'Legendary blade. +15 attack.' }
+];
+$('store-grid').innerHTML = ITEMS.map(i => `
+  <div class="card item">
+    <div class="emoji">${i.emoji}</div>
+    <h2>${i.name}</h2>
+    <p class="muted">${i.desc}</p>
+    <div class="row"><span class="price">🪙 ${i.price}</span>
+      <button class="btn" type="button" id="buy-${i.id}" data-item="${i.id}">Buy</button></div>
+  </div>`).join('');
+document.querySelectorAll('[data-item]').forEach(btn => btn.addEventListener('click', () => {
+  const item = ITEMS.find(i => i.id === btn.dataset.item);
+  // DEFECT: no balance check — the purchase goes through and coins can go negative.
+  state.coins -= item.price;
+  state.inventory.push(item);
+  setMsg('store-msg', 'Purchased ' + item.name + '! -' + item.price + ' coins.', true);
+  renderHud();
+}));
+
+/* ---------- Leaderboard ---------- */
+const BOARD = [
+  { rank:1, name:'ShadowFox',    level:42, score:98450 },
+  { rank:2, name:'LunaByte',     level:39, score:91200 },
+  { rank:3, name:'IronPixel',    level:37, score:87930 },
+  { rank:4, name:'NovaKid',      level:30, score:72100 },  // DEFECT: lower score ranked above RetroQueen
+  { rank:5, name:'RetroQueen',   level:33, score:79640 },
+  { rank:6, name:'StarRunner',   level:3,  score:64300, me:true },
+  { rank:7, name:'GlitchHunter', level:25, score:51020 }
+];
+function renderBoard(){
+  const q = $('lb-search').value.trim();
+  // DEFECT: search is case-sensitive ("shadow" does not find "ShadowFox").
+  const rows = BOARD.filter(r => r.name.includes(q));
+  $('lb-body').innerHTML = rows.map(r => `<tr class="${r.me?'me':''}"><td>#${r.rank}</td><td>${r.me ? state.nickname + ' (you)' : r.name}</td><td>${r.level}</td><td>${r.score.toLocaleString('en-US')}</td></tr>`).join('');
+  $('lb-empty').textContent = rows.length ? '' : 'No players found.';
+}
+$('lb-search').addEventListener('input', renderBoard);
+renderBoard();
+
+/* ---------- Settings ---------- */
+$('set-volume').addEventListener('input', e => $('vol-value').textContent = e.target.value);
+$('settings-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const nick = $('set-nickname').value.trim();
+  // DEFECT: only the minimum length is validated; nicknames over 16 characters are accepted.
+  if(nick.length < 3){ setMsg('settings-msg', 'Nickname must be between 3 and 16 characters.', false); return; }
+  state.nickname = nick;
+  setMsg('settings-msg', 'Settings saved.', true);
+  renderHud(); renderBoard();
+});
+
+$('build-label').textContent = 'Build ' + BUILD;
+</script>
+</body>
+</html>
